@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  cyber-sentinel-ids:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cyber_sentinel_ids
+    restart: always
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    network_mode: "host"
+    ports:
+      - "8000:8000"
+    environment:
+      - JWT_SECRET=IDS_SUPER_SECRET_KEY_FOR_RESUME_PROJECT_2026_PRODUCTION
+    volumes:
+      - ./ids_data:/app/backend/uploads

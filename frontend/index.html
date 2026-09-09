@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberSentinel — Enterprise Intrusion Detection System</title>
+  
+  <!-- Remix Icons & Google Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <!-- ApexCharts CDN for high-performance streaming graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <!-- D3.js CDN for Network Topology Graph -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="app">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="ri-shield-keyhole-line"></i>
+        </div>
+        <div>
+          <div class="brand-title">CyberSentinel</div>
+          <div class="brand-sub">Real-Time IDS Engine</div>
+        </div>
+      </div>
+
+      <ul class="nav-menu">
+        <li>
+          <a class="nav-item active" data-target="dashboard-view">
+            <i class="ri-dashboard-3-line"></i> Dashboard
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-target="packets-view">
+            <i class="ri-pulse-line"></i> Live Packets
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-target="alerts-view">
+            <i class="ri-alarm-warning-line"></i> Threat Alerts
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-target="analysis-view">
+            <i class="ri-file-search-line"></i> PCAP Offline Analysis
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-target="topology-view">
+            <i class="ri-git-merge-line"></i> Network Topology
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-target="reports-view">
+            <i class="ri-file-pdf-2-line"></i> Security Reports
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-target="settings-view">
+            <i class="ri-settings-4-line"></i> System Settings
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <div class="pulse-dot" id="engine-status-dot"></div>
+          <span id="engine-status-text">Engine: Active (24/7)</span>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+          User: <span id="current-username" style="color: var(--accent-cyan);">admin</span> (<span id="current-role">admin</span>)
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Top Bar Header -->
+      <header class="top-header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <button class="btn btn-outline" id="btn-sidebar-toggle" style="padding: 0.45rem 0.75rem;">
+            <i class="ri-menu-line" style="font-size: 1.25rem;"></i>
+          </button>
+          <div class="header-title" id="page-title">Network Security Dashboard</div>
+        </div>
+        <div class="header-actions">
+          <div class="glass-panel" style="padding: 0.4rem 0.9rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="ri-speed-line" style="color: var(--accent-cyan);"></i>
+            <span>Rate: <strong id="header-pps">0.0</strong> pkts/sec</span>
+          </div>
+
+          <div class="glass-panel" style="padding: 0.4rem 0.9rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; border-color: rgba(244, 63, 94, 0.4);">
+            <i class="ri-error-warning-line" style="color: var(--accent-rose);"></i>
+            <span>Threats: <strong id="header-threats" style="color: var(--accent-rose);">0</strong></span>
+          </div>
+
+          <button class="btn btn-primary" id="btn-header-pdf" style="padding: 0.4rem 0.85rem; font-size: 0.85rem;">
+            <i class="ri-file-pdf-fill"></i> Export PDF
+          </button>
+
+          <button class="btn btn-outline" id="btn-logout" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+            <i class="ri-logout-box-r-line"></i> Logout
+          </button>
+        </div>
+      </header>
+
+      <!-- 1. DASHBOARD VIEW -->
+      <section id="dashboard-view" class="view-container active">
+        <!-- KPI Grid -->
+        <div class="kpi-grid">
+          <div class="glass-panel kpi-card">
+            <div class="kpi-icon" style="background: rgba(0, 242, 254, 0.15); color: var(--accent-cyan);">
+              <i class="ri-radar-line"></i>
+            </div>
+            <div>
+              <div class="kpi-value" id="kpi-total-packets">0</div>
+              <div class="kpi-label">Total Packets Processed</div>
+            </div>
+          </div>
+
+          <div class="glass-panel kpi-card">
+            <div class="kpi-icon" style="background: rgba(244, 63, 94, 0.15); color: var(--accent-rose);">
+              <i class="ri-shield-cross-line"></i>
+            </div>
+            <div>
+              <div class="kpi-value" id="kpi-critical-alerts" style="color: var(--accent-rose);">0</div>
+              <div class="kpi-label">Critical Security Alerts</div>
+            </div>
+          </div>
+
+          <div class="glass-panel kpi-card">
+            <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber);">
+              <i class="ri-fire-line"></i>
+            </div>
+            <div>
+              <div class="kpi-value" id="kpi-high-alerts" style="color: var(--accent-amber);">0</div>
+              <div class="kpi-label">High / Warning Threats</div>
+            </div>
+          </div>
+
+          <div class="glass-panel kpi-card">
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);">
+              <i class="ri-broadcast-line"></i>
+            </div>
+            <div>
+              <div class="kpi-value" id="kpi-bandwidth">0.0</div>
+              <div class="kpi-label">Estimated Bandwidth (Kbps)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+          <!-- Streaming Packet Rate Chart -->
+          <div class="glass-panel" style="padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="font-size: 1.1rem; font-weight: 600;">Real-Time Packet Flow Rate</h3>
+              <span class="badge badge-medium">Streaming (WebSocket)</span>
+            </div>
+            <div id="chart-packet-rate" style="min-height: 280px;"></div>
+          </div>
+
+          <!-- Protocol Distribution Donut Chart -->
+          <div class="glass-panel" style="padding: 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Protocol Breakdown</h3>
+            <div id="chart-protocol-dist" style="min-height: 280px;"></div>
+          </div>
+        </div>
+
+        <!-- Bottom Grid: Live Ticker Feed & Top Talkers -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <!-- Live Threat Alert Ticker -->
+          <div class="glass-panel" style="padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="font-size: 1.1rem; font-weight: 600;">Recent Attack Detections</h3>
+              <a href="#" class="nav-item-link" data-target="alerts-view" style="font-size: 0.85rem; color: var(--accent-cyan); text-decoration: none;">View All →</a>
+            </div>
+            <div id="live-alert-feed" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 300px; overflow-y: auto;">
+              <div style="color: var(--text-muted); font-size: 0.85rem;">Listening for real-time security events...</div>
+            </div>
+          </div>
+
+          <!-- Top Source IPs / Talkers -->
+          <div class="glass-panel" style="padding: 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Top Active Source Hosts</h3>
+            <div class="custom-table-wrapper">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Source IP</th>
+                    <th>Country Location</th>
+                    <th>Packets Sent</th>
+                  </tr>
+                </thead>
+                <tbody id="table-top-talkers">
+                  <tr><td colspan="3" style="color: var(--text-muted);">Loading active hosts...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. LIVE PACKETS VIEW -->
+      <section id="packets-view" class="view-container">
+        <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 1rem; align-items: center; flex: 1; max-width: 600px;">
+            <input type="text" id="packet-search-input" placeholder="Search IP, Port, or Info..." style="width: 100%; padding: 0.65rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: #fff; font-family: inherit;">
+            <select id="packet-proto-filter" style="padding: 0.65rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: #121824; color: #fff; font-family: inherit;">
+              <option value="ALL">All Protocols</option>
+              <option value="TCP">TCP</option>
+              <option value="UDP">UDP</option>
+              <option value="HTTP">HTTP</option>
+              <option value="HTTPS">HTTPS</option>
+              <option value="DNS">DNS</option>
+              <option value="ICMP">ICMP</option>
+              <option value="ARP">ARP</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-outline" id="btn-pause-packets"><i class="ri-pause-circle-line"></i> Pause Stream</button>
+            <button class="btn btn-outline" id="btn-clear-packets"><i class="ri-delete-bin-line"></i> Clear Table</button>
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 1.5rem;">
+          <div class="custom-table-wrapper">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Source IP</th>
+                  <th>Src Port</th>
+                  <th>Dest IP</th>
+                  <th>Dst Port</th>
+                  <th>Proto</th>
+                  <th>Size</th>
+                  <th>Info / Flags</th>
+                </tr>
+              </thead>
+              <tbody id="packets-table-body">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Waiting for packet capture stream...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. THREAT ALERTS VIEW -->
+      <section id="alerts-view" class="view-container">
+        <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-outline alert-filter-btn active" data-sev="ALL">All Severities</button>
+            <button class="btn btn-outline alert-filter-btn" data-sev="CRITICAL" style="border-color: rgba(244, 63, 94, 0.4);">Critical</button>
+            <button class="btn btn-outline alert-filter-btn" data-sev="HIGH" style="border-color: rgba(245, 158, 11, 0.4);">High</button>
+            <button class="btn btn-outline alert-filter-btn" data-sev="MEDIUM" style="border-color: rgba(79, 172, 254, 0.4);">Medium</button>
+          </div>
+          <div>
+            <span style="font-size: 0.9rem; color: var(--text-secondary);">Total Logged Alerts: <strong id="alerts-total-count">0</strong></span>
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 1.5rem;">
+          <div class="custom-table-wrapper">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Rule Triggered</th>
+                  <th>Severity</th>
+                  <th>Attacker (Src IP)</th>
+                  <th>Country</th>
+                  <th>Target (Dst IP)</th>
+                  <th>Description</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="alerts-table-body">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No security threats logged yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. PCAP OFFLINE ANALYSIS VIEW -->
+      <section id="analysis-view" class="view-container">
+        <div class="glass-panel" style="padding: 2.5rem; text-align: center; margin-bottom: 2rem;" id="pcap-drop-zone">
+          <i class="ri-file-upload-line" style="font-size: 3.5rem; color: var(--accent-cyan); display: block; margin-bottom: 1rem;"></i>
+          <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;">Upload PCAP Packet Capture File</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Drag and drop your <code>.pcap</code> or <code>.pcapng</code> file here for deep offline analysis</p>
+          <input type="file" id="pcap-file-input" accept=".pcap,.pcapng" style="display: none;">
+          <button class="btn btn-primary" onclick="document.getElementById('pcap-file-input').click()">
+            <i class="ri-folder-open-line"></i> Select PCAP File
+          </button>
+        </div>
+
+        <div id="pcap-results-section" style="display: none;">
+          <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">PCAP Inspection Report</h3>
+          
+          <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.5rem;">
+            <div class="glass-panel kpi-card">
+              <div class="kpi-icon" style="background: rgba(0, 242, 254, 0.2); color: var(--accent-cyan);"><i class="ri-file-list-3-line"></i></div>
+              <div>
+                <div class="kpi-value" id="pcap-res-total">0</div>
+                <div class="kpi-label">Packets Parsed</div>
+              </div>
+            </div>
+            <div class="glass-panel kpi-card">
+              <div class="kpi-icon" style="background: rgba(244, 63, 94, 0.2); color: var(--accent-rose);"><i class="ri-alert-line"></i></div>
+              <div>
+                <div class="kpi-value" id="pcap-res-alerts" style="color: var(--accent-rose);">0</div>
+                <div class="kpi-label">Threat Alerts Triggered</div>
+              </div>
+            </div>
+            <div class="glass-panel kpi-card">
+              <div class="kpi-icon" style="background: rgba(168, 85, 247, 0.2); color: var(--accent-purple);"><i class="ri-node-tree"></i></div>
+              <div>
+                <div class="kpi-value" id="pcap-res-ips">0</div>
+                <div class="kpi-label">Unique IP Endpoints</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-panel" style="padding: 1.5rem;">
+            <h4 style="font-weight: 600; margin-bottom: 1rem;">Detected Security Violations in File</h4>
+            <div class="custom-table-wrapper">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Rule</th>
+                    <th>Severity</th>
+                    <th>Attacker IP</th>
+                    <th>Victim IP</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="pcap-alerts-table-body">
+                  <tr><td colspan="5" style="color: var(--text-muted);">No threats found in uploaded file.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. NETWORK TOPOLOGY MAP VIEW -->
+      <section id="topology-view" class="view-container">
+        <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 700;">Live Network Graph Visualization</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">Interactive D3.js topology showing IP connections and active traffic flows</p>
+          </div>
+          <button class="btn btn-outline" id="btn-refresh-topology"><i class="ri-refresh-line"></i> Redraw Graph</button>
+        </div>
+
+        <div class="glass-panel" style="padding: 1.5rem; height: 550px; position: relative; overflow: hidden;" id="topology-container">
+          <!-- D3 SVG will render here -->
+        </div>
+      </section>
+
+      <!-- 6. SECURITY REPORTS & EXPORTS VIEW -->
+      <section id="reports-view" class="view-container">
+        <div class="glass-panel" style="padding: 2rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.4rem;">Executive Threat Analysis & Security Reports</h2>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">Generate comprehensive PDF forensic audit reports compiling network statistics, attack sources, and incident logs.</p>
+          </div>
+          <button class="btn btn-primary" id="btn-main-pdf-download" style="padding: 0.85rem 1.5rem; font-size: 1rem;">
+            <i class="ri-file-pdf-fill" style="font-size: 1.25rem;"></i> Download PDF Security Report
+          </button>
+        </div>
+
+        <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
+          <div class="glass-panel kpi-card">
+            <div class="kpi-icon" style="background: rgba(0, 242, 254, 0.2); color: var(--accent-cyan);"><i class="ri-shield-check-line"></i></div>
+            <div>
+              <div class="kpi-value" style="color: var(--accent-cyan);">PDF v2.0</div>
+              <div class="kpi-label">Forensic Audit Format</div>
+            </div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald);"><i class="ri-lock-line"></i></div>
+            <div>
+              <div class="kpi-value" style="color: var(--accent-emerald);">Authenticated</div>
+              <div class="kpi-label">Signed Executive Digest</div>
+            </div>
+          </div>
+          <div class="glass-panel kpi-card">
+            <div class="kpi-icon" style="background: rgba(168, 85, 247, 0.2); color: var(--accent-purple);"><i class="ri-earth-line"></i></div>
+            <div>
+              <div class="kpi-value" style="color: var(--accent-purple);">GeoIP Mapped</div>
+              <div class="kpi-label">Attacker Origin Profiling</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 2rem;">
+          <h3 style="font-weight: 700; margin-bottom: 1rem;">Included Report Sections</h3>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.85rem; color: var(--text-secondary); font-size: 0.95rem;">
+            <li style="display: flex; align-items: center; gap: 0.75rem;"><i class="ri-checkbox-circle-fill" style="color: var(--accent-cyan);"></i> <strong>Executive System Overview:</strong> Total packets processed, bandwidth utilization, and traffic flow metrics.</li>
+            <li style="display: flex; align-items: center; gap: 0.75rem;"><i class="ri-checkbox-circle-fill" style="color: var(--accent-cyan);"></i> <strong>Threat Severity Breakdown:</strong> Critical, High, Medium, and Low severity attack categorization.</li>
+            <li style="display: flex; align-items: center; gap: 0.75rem;"><i class="ri-checkbox-circle-fill" style="color: var(--accent-cyan);"></i> <strong>Top Attacker Origin Table:</strong> GeoIP country mapping and incident frequency per malicious source IP.</li>
+            <li style="display: flex; align-items: center; gap: 0.75rem;"><i class="ri-checkbox-circle-fill" style="color: var(--accent-cyan);"></i> <strong>Incident Audit Trail:</strong> Recent threat rules triggered (Port Scans, SYN Floods, SQLi, Brute Force).</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 7. SYSTEM SETTINGS VIEW -->
+      <section id="settings-view" class="view-container">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <!-- Engine Control Box -->
+          <div class="glass-panel" style="padding: 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">Capture Engine Control</h3>
+            
+            <div style="margin-bottom: 1.25rem;">
+              <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem;">Network Interface</label>
+              <select id="setting-interface" style="width: 100%; padding: 0.65rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: #121824; color: #fff; font-family: inherit;">
+                <option value="all">All Interfaces (Promiscuous Mode)</option>
+                <option value="eth0">eth0 / Ethernet</option>
+                <option value="wlan0">wlan0 / Wi-Fi</option>
+                <option value="lo">Loopback (127.0.0.1)</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+              <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem;">BPF Capture Filter (Berkeley Packet Filter)</label>
+              <input type="text" id="setting-bpf" placeholder="e.g. tcp port 80 or ip host 192.168.1.1" style="width: 100%; padding: 0.65rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: #fff; font-family: inherit;">
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+              <button class="btn btn-primary" id="btn-start-engine"><i class="ri-play-fill"></i> Start Capture</button>
+              <button class="btn btn-danger" id="btn-stop-engine"><i class="ri-stop-fill"></i> Stop Capture</button>
+            </div>
+          </div>
+
+          <!-- Security & Auth Info Box -->
+          <div class="glass-panel" style="padding: 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">IDS Security Configuration</h3>
+            
+            <div style="margin-bottom: 1rem;">
+              <div style="font-size: 0.85rem; color: var(--text-secondary);">Authentication Protocol</div>
+              <div style="font-weight: 600; color: var(--accent-emerald);">JWT (JSON Web Token) - HS256</div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+              <div style="font-size: 0.85rem; color: var(--text-secondary);">Rate Limiting Policy</div>
+              <div style="font-weight: 600; color: var(--accent-cyan);">Active (300 requests / min per IP)</div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+              <div style="font-size: 0.85rem; color: var(--text-secondary);">Rule Database</div>
+              <div style="font-weight: 600; color: var(--accent-amber);">10+ Behavioral & Signature Rules Active</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- LOGIN MODAL OVERLAY -->
+  <div class="modal-overlay" id="login-modal">
+    <div class="glass-panel modal-body">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div class="brand-icon" style="margin: 0 auto 1rem auto; width: 54px; height: 54px; font-size: 1.8rem;">
+          <i class="ri-shield-keyhole-line"></i>
+        </div>
+        <h2 style="font-size: 1.5rem; font-weight: 800;">CyberSentinel IDS Login</h2>
+        <p style="color: var(--text-secondary); font-size: 0.85rem;">Enter security credentials to access dashboard</p>
+      </div>
+
+      <form id="login-form">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.3rem;">Username</label>
+          <input type="text" id="login-username" value="admin" required style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.4); color: #fff; font-family: inherit;">
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.3rem;">Password</label>
+          <input type="password" id="login-password" value="admin123" required style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.4); color: #fff; font-family: inherit;">
+        </div>
+
+        <div id="login-error-msg" style="color: var(--accent-rose); font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem;">
+          <i class="ri-lock-unlock-line"></i> Authenticate & Connect
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Custom App JavaScript files -->
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/packets.js"></script>
+  <script src="js/alerts.js"></script>
+  <script src="js/topology.js"></script>
+  <script src="js/analysis.js"></script>
+  <script src="js/settings.js"></script>
+</body>
+</html>
