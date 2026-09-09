@@ -44,6 +44,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def normalize_api_path(request: Request, call_next):
+    path = request.url.path
+    if not path.startswith("/api/"):
+        if path == "/login" or path == "/auth/login":
+            request.scope["path"] = "/api/auth/login"
+        elif path.startswith("/auth/"):
+            request.scope["path"] = "/api" + path
+        elif any(path.startswith(prefix) for prefix in ["/stats", "/packets", "/alerts", "/topology", "/pcap", "/capture", "/reports"]):
+            request.scope["path"] = "/api" + path
+    response = await call_next(request)
+    return response
+
 # Enable Custom Security & Rate Limiting Middleware
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(SimpleRateLimiterMiddleware, max_requests=300, window_seconds=60)
@@ -80,6 +93,7 @@ def shutdown_event():
 
 @app.post("/api/auth/login", response_model=schemas.Token)
 @app.post("/auth/login", response_model=schemas.Token)
+@app.post("/login", response_model=schemas.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # Direct fallback authentication for admin on Vercel cold starts
     if form_data.username == "admin" and form_data.password == "admin123":

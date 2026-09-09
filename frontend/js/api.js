@@ -44,23 +44,28 @@ const API = {
     formData.append('username', username);
     formData.append('password', password);
 
-    let response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData,
-    });
+    const endpoints = ['/api/auth/login', '/auth/login', '/login'];
+    let response = null;
 
-    if (!response.ok && response.status === 404) {
-      response = await fetch('/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData,
-      });
+    for (const ep of endpoints) {
+      try {
+        response = await fetch(ep, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData,
+        });
+        if (response.ok || response.status !== 404) {
+          break;
+        }
+      } catch (e) {
+        // Continue to next endpoint
+      }
     }
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.detail || `Login failed (${response.status})`);
+    if (!response || !response.ok) {
+      const err = response ? await response.json().catch(() => ({})) : {};
+      const statusSuffix = response ? ` (${response.status})` : '';
+      throw new Error(err.detail || `Login failed${statusSuffix}`);
     }
 
     const data = await response.json();
