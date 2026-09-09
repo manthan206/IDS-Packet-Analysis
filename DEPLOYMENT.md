@@ -33,7 +33,19 @@ git push -u origin main
 
 To make the dashboard accessible live to anyone on the Internet 24/7, use one of the following deployment methods:
 
-### Method 1: Render / Railway (Easiest & Free Cloud Hosting)
+### Method 1: Deploy on Vercel (1-Click Free Hosting)
+
+1. Sign up on [Vercel.com](https://vercel.com) using your GitHub account.
+2. Click **Add New...** ➔ **Project**.
+3. Import your GitHub repository (`ids-packet-analysis`).
+4. Keep all default settings (Vercel auto-detects `vercel.json` and configures Python FastAPI Serverless Functions & static frontend files).
+5. Click **Deploy**.
+6. Vercel will build and assign a free HTTPS URL:
+   `https://ids-packet-analysis.vercel.app`
+
+---
+
+### Method 2: Render / Railway (Docker Cloud Hosting)
 
 1. Sign up on [Render.com](https://render.com) or [Railway.app](https://railway.app).
 2. Click **New +** ➔ **Web Service**.
