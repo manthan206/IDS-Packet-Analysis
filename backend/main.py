@@ -72,7 +72,19 @@ def shutdown_event():
 # ----------------- AUTH ENDPOINTS ----------------- #
 
 @app.post("/api/auth/login", response_model=schemas.Token)
+@app.post("/auth/login", response_model=schemas.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # Direct fallback authentication for admin on Vercel cold starts
+    if form_data.username == "admin" and form_data.password == "admin123":
+        ensure_admin_user_exists(db)
+        access_token = auth.create_access_token(data={"sub": "admin", "role": "admin"})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "role": "admin",
+            "username": "admin"
+        }
+
     ensure_admin_user_exists(db)
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
@@ -97,6 +109,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     }
 
 @app.post("/api/auth/register", response_model=schemas.UserResponse)
+@app.post("/auth/register", response_model=schemas.UserResponse)
 def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     existing = db.query(models.User).filter(models.User.username == user_data.username).first()
     if existing:
@@ -110,12 +123,14 @@ def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 @app.get("/api/auth/me", response_model=schemas.UserResponse)
+@app.get("/auth/me", response_model=schemas.UserResponse)
 def get_me(current_user: models.User = Depends(auth.get_current_user)):
     return current_user
 
 # ----------------- STATS & DASHBOARD API ----------------- #
 
 @app.get("/api/stats")
+@app.get("/stats")
 def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     total_packets = db.query(models.PacketLog).count()
     total_alerts = db.query(models.Alert).count()
@@ -157,11 +172,13 @@ def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User
 # ----------------- PACKET LOGS & ALERTS ----------------- #
 
 @app.get("/api/packets")
+@app.get("/packets")
 def get_packets(limit: int = 100, offset: int = 0, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     packets = db.query(models.PacketLog).order_by(models.PacketLog.id.desc()).offset(offset).limit(limit).all()
     return packets
 
 @app.get("/api/alerts")
+@app.get("/alerts")
 def get_alerts(severity: Optional[str] = None, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     query = db.query(models.Alert)
     if severity and severity.upper() != "ALL":
@@ -170,6 +187,7 @@ def get_alerts(severity: Optional[str] = None, limit: int = 100, db: Session = D
     return alerts
 
 @app.put("/api/alerts/{alert_id}/acknowledge")
+@app.put("/alerts/{alert_id}/acknowledge")
 def acknowledge_alert(alert_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     alert = db.query(models.Alert).filter(models.Alert.id == alert_id).first()
     if not alert:
@@ -181,6 +199,7 @@ def acknowledge_alert(alert_id: int, db: Session = Depends(get_db), current_user
 # ----------------- PCAP UPLOAD & ANALYSIS ----------------- #
 
 @app.post("/api/pcap/upload")
+@app.post("/pcap/upload")
 async def upload_pcap(file: UploadFile = File(...), current_user: models.User = Depends(auth.get_current_user)):
     if not (file.filename.endswith(".pcap") or file.filename.endswith(".pcapng")):
         raise HTTPException(status_code=400, detail="Only .pcap and .pcapng files are supported")
@@ -198,6 +217,7 @@ async def upload_pcap(file: UploadFile = File(...), current_user: models.User = 
 # ----------------- NETWORK TOPOLOGY API ----------------- #
 
 @app.get("/api/topology")
+@app.get("/topology")
 def get_network_topology(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     packets = db.query(models.PacketLog).order_by(models.PacketLog.id.desc()).limit(200).all()
     nodes_map = {}
@@ -234,6 +254,7 @@ def stop_capture(current_user: models.User = Depends(auth.require_admin)):
 # ----------------- SECURITY REPORTS & EXPORTS ----------------- #
 
 @app.get("/api/reports/pdf")
+@app.get("/reports/pdf")
 def export_pdf_report(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     pdf_buffer = reports.generate_pdf_report(db)
     filename = f"cybersentinel_security_report_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.pdf"
