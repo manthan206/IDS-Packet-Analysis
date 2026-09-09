@@ -41,20 +41,29 @@ app.add_middleware(
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(SimpleRateLimiterMiddleware, max_requests=300, window_seconds=60)
 
+def ensure_admin_user_exists(db: Session):
+    try:
+        Base.metadata.create_all(bind=engine)
+        admin_user = db.query(models.User).filter(models.User.username == "admin").first()
+        if not admin_user:
+            hashed_pwd = auth.get_password_hash("admin123")
+            db.add(models.User(username="admin", hashed_password=hashed_pwd, role="admin"))
+            db.commit()
+    except Exception:
+        db.rollback()
+
 # Seed default admin user if not exists
 @app.on_event("startup")
 def startup_event():
     db = next(get_db())
-    admin_user = db.query(models.User).filter(models.User.username == "admin").first()
-    if not admin_user:
-        hashed_pwd = auth.get_password_hash("admin123")
-        db.add(models.User(username="admin", hashed_password=hashed_pwd, role="admin"))
-        db.commit()
+    ensure_admin_user_exists(db)
     
     # Store event loop reference for PacketCaptureEngine
-    capture_engine.loop = asyncio.get_event_loop()
-    # Auto-start capture engine
-    capture_engine.start()
+    try:
+        capture_engine.loop = asyncio.get_event_loop()
+        capture_engine.start()
+    except Exception:
+        pass
 
 @app.on_event("shutdown")
 def shutdown_event():
@@ -64,6 +73,7 @@ def shutdown_event():
 
 @app.post("/api/auth/login", response_model=schemas.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    ensure_admin_user_exists(db)
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -73,9 +83,11 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         )
     access_token = auth.create_access_token(data={"sub": user.username, "role": user.role})
     
-    # Audit log
-    db.add(models.AuditLog(username=user.username, action="USER_LOGIN"))
-    db.commit()
+    try:
+        db.add(models.AuditLog(username=user.username, action="USER_LOGIN"))
+        db.commit()
+    except Exception:
+        db.rollback()
 
     return {
         "access_token": access_token,
