@@ -154,12 +154,59 @@ import random
 
 def simulate_live_serverless_traffic(db: Session):
     """
-    Generates dynamic real-time packet traffic and threat security events
-    on Vercel serverless API calls so metrics constantly update in real-time.
+    Ensures DB is auto-seeded and generates continuous dynamic real-time packet traffic
+    and threat security events on Vercel serverless API calls.
     """
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception:
+        pass
+
+    now = datetime.utcnow()
     protocols = ["TCP", "UDP", "HTTP", "HTTPS", "DNS", "ICMP", "ARP"]
     sample_src_ips = ["192.168.1.105", "10.0.0.42", "185.220.101.5", "45.33.32.156", "198.51.100.4", "104.244.42.1"]
     sample_dst_ips = ["192.168.1.1", "10.0.0.1", "172.16.0.50", "8.8.8.8"]
+
+    # Pre-seed if database is empty on serverless cold-start
+    try:
+        if db.query(models.PacketLog).count() == 0:
+            for i in range(30):
+                pkt = models.PacketLog(
+                    timestamp=now - timedelta(seconds=i*3),
+                    source_ip=random.choice(sample_src_ips),
+                    dest_ip=random.choice(sample_dst_ips),
+                    source_port=random.randint(1024, 65535),
+                    dest_port=random.choice([80, 443, 53, 22]),
+                    protocol=random.choice(protocols[:5]),
+                    length=random.randint(64, 1460),
+                    flags="PA",
+                    info="Active Network Traffic Flow"
+                )
+                db.add(pkt)
+            
+            init_alerts = [
+                ("Port Scan Probe", "CRITICAL", "185.220.101.5", "192.168.1.100", 45210, 80, "TCP", "SYN probe across restricted ports", "RUSSIA"),
+                ("TCP SYN Flood Attack", "HIGH", "45.33.32.156", "192.168.1.100", 32104, 80, "TCP", "High rate of unacknowledged SYN packets", "CHINA"),
+                ("SQL Injection Attack", "CRITICAL", "198.51.100.4", "192.168.1.100", 54321, 80, "HTTP", "GET /login?user=admin' UNION SELECT 1--", "UNITED STATES"),
+                ("SSH Brute Force", "HIGH", "104.244.42.1", "192.168.1.100", 61234, 22, "SSH", "Multiple SSH auth attempts detected", "GERMANY")
+            ]
+            for a in init_alerts:
+                al = models.Alert(
+                    timestamp=now,
+                    rule_name=a[0],
+                    severity=a[1],
+                    source_ip=a[2],
+                    dest_ip=a[3],
+                    source_port=a[4],
+                    dest_port=a[5],
+                    protocol=a[6],
+                    description=a[7],
+                    country=a[8]
+                )
+                db.add(al)
+            db.commit()
+    except Exception:
+        db.rollback()
 
     num_pkts = random.randint(4, 9)
     for _ in range(num_pkts):
@@ -171,6 +218,7 @@ def simulate_live_serverless_traffic(db: Session):
         length = random.randint(64, 1500)
         
         pkt_db = models.PacketLog(
+            timestamp=now,
             source_ip=src,
             dest_ip=dst,
             source_port=sport,
@@ -178,12 +226,11 @@ def simulate_live_serverless_traffic(db: Session):
             protocol=proto,
             length=length,
             flags="PA" if proto in ["TCP", "HTTP"] else "",
-            info=f"{proto} Data Segment [{sport} -> {dport}]"
+            info=f"{proto} Packet Stream [{sport} -> {dport}]"
         )
         db.add(pkt_db)
 
-    # 25% chance to simulate a security attack detection
-    if random.random() < 0.25:
+    if random.random() < 0.35:
         attack_types = [
             ("Port Scan Probe", "CRITICAL", "SYN probe across restricted ports", "RUSSIA", "185.220.101.5"),
             ("TCP SYN Flood Attack", "HIGH", "High rate of unacknowledged SYN packets", "CHINA", "45.33.32.156"),
@@ -192,6 +239,7 @@ def simulate_live_serverless_traffic(db: Session):
         ]
         atk = random.choice(attack_types)
         alert_db = models.Alert(
+            timestamp=now,
             rule_name=atk[0],
             severity=atk[1],
             source_ip=atk[4],
@@ -258,12 +306,14 @@ def get_dashboard_stats(db: Session = Depends(get_db), current_user: models.User
 @app.get("/api/packets")
 @app.get("/packets")
 def get_packets(limit: int = 100, offset: int = 0, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    simulate_live_serverless_traffic(db)
     packets = db.query(models.PacketLog).order_by(models.PacketLog.id.desc()).offset(offset).limit(limit).all()
     return packets
 
 @app.get("/api/alerts")
 @app.get("/alerts")
 def get_alerts(severity: Optional[str] = None, limit: int = 100, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    simulate_live_serverless_traffic(db)
     query = db.query(models.Alert)
     if severity and severity.upper() != "ALL":
         query = query.filter(models.Alert.severity == severity.upper())

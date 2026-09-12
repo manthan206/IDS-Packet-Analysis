@@ -26,7 +26,7 @@ window.PacketsModule = (() => {
 
     tbody.innerHTML = filtered.map(p => `
       <tr>
-        <td class="mono" style="font-size: 0.8rem; color: var(--text-muted);">${p.timestamp}</td>
+        <td class="mono" style="font-size: 0.8rem; color: var(--text-muted);">${p.timestamp ? (p.timestamp.includes('T') ? p.timestamp.split('T')[1].slice(0, 8) : p.timestamp) : new Date().toLocaleTimeString()}</td>
         <td><strong style="color: var(--accent-cyan);">${p.source_ip}</strong></td>
         <td class="mono">${p.source_port || '-'}</td>
         <td><strong style="color: var(--accent-blue);">${p.dest_ip}</strong></td>
