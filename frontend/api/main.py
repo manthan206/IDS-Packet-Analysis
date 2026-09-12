@@ -422,6 +422,12 @@ async def websocket_endpoint(websocket: WebSocket):
 
 # ----------------- FRONTEND MOUNTING ----------------- #
 
-frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
-if os.path.exists(frontend_path):
-    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+IS_VERCEL = bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
+
+if not IS_VERCEL:
+    try:
+        frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
+        if os.path.exists(frontend_path):
+            app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+    except Exception:
+        pass
