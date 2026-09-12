@@ -103,9 +103,10 @@
             <i class="ri-file-pdf-fill"></i> Export PDF
           </button>
 
-          <button class="btn btn-outline" id="btn-logout" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
-            <i class="ri-logout-box-r-line"></i> Logout
-          </button>
+          <div class="glass-panel" style="padding: 0.4rem 0.85rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; border-color: rgba(16, 185, 129, 0.4);">
+            <i class="ri-checkbox-circle-fill" style="color: var(--accent-emerald);"></i>
+            <span>System Active</span>
+          </div>
         </div>
       </header>
 
@@ -463,36 +464,7 @@
     </main>
   </div>
 
-  <!-- LOGIN MODAL OVERLAY -->
-  <div class="modal-overlay" id="login-modal">
-    <div class="glass-panel modal-body">
-      <div style="text-align: center; margin-bottom: 1.5rem;">
-        <div class="brand-icon" style="margin: 0 auto 1rem auto; width: 54px; height: 54px; font-size: 1.8rem;">
-          <i class="ri-shield-keyhole-line"></i>
-        </div>
-        <h2 style="font-size: 1.5rem; font-weight: 800;">CyberSentinel IDS Login</h2>
-        <p style="color: var(--text-secondary); font-size: 0.85rem;">Enter security credentials to access dashboard</p>
-      </div>
 
-      <form id="login-form">
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.3rem;">Username</label>
-          <input type="text" id="login-username" value="admin" required style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.4); color: #fff; font-family: inherit;">
-        </div>
-
-        <div style="margin-bottom: 1.5rem;">
-          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.3rem;">Password</label>
-          <input type="password" id="login-password" value="admin123" required style="width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.4); color: #fff; font-family: inherit;">
-        </div>
-
-        <div id="login-error-msg" style="color: var(--accent-rose); font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
-
-        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem;">
-          <i class="ri-lock-unlock-line"></i> Authenticate & Connect
-        </button>
-      </form>
-    </div>
-  </div>
 
   <!-- Custom App JavaScript files -->
   <script src="js/api.js"></script>

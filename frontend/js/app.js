@@ -89,48 +89,20 @@ function setupPDFButtons() {
 
 function initAuth() {
   const loginModal = document.getElementById('login-modal');
-  const loginForm = document.getElementById('login-form');
-  const loginError = document.getElementById('login-error-msg');
   const btnLogout = document.getElementById('btn-logout');
 
-  const token = API.getToken();
-  if (!token) {
-    loginModal.classList.add('active');
-  } else {
+  if (loginModal) {
     loginModal.classList.remove('active');
-    initWebSocket();
-    startStatsPolling();
+    loginModal.style.display = 'none';
   }
 
-  loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    loginError.style.display = 'none';
-    const user = document.getElementById('login-username').value;
-    const pass = document.getElementById('login-password').value;
+  if (btnLogout) {
+    btnLogout.style.display = 'none';
+  }
 
-    try {
-      const data = await API.login(user, pass);
-      document.getElementById('current-username').innerText = data.username;
-      document.getElementById('current-role').innerText = data.role;
-      loginModal.classList.remove('active');
-      initWebSocket();
-      startStatsPolling();
-      switchView('dashboard-view');
-    } catch (err) {
-      loginError.innerText = err.message || 'Invalid login credentials';
-      loginError.style.display = 'block';
-    }
-  });
-
-  btnLogout.addEventListener('click', () => {
-    API.clearToken();
-    if (socket) socket.close();
-    loginModal.classList.add('active');
-  });
-
-  window.addEventListener('auth:unauthorized', () => {
-    loginModal.classList.add('active');
-  });
+  // Auto-start real-time dashboard & stats engine directly without login screen
+  initWebSocket();
+  startStatsPolling();
 }
 
 function initWebSocket() {
