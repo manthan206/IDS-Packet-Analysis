@@ -46,7 +46,16 @@ app.add_middleware(
 
 @app.middleware("http")
 async def normalize_api_path(request: Request, call_next):
-    path = request.url.path
+    raw_path = request.scope.get("path", "")
+    
+    # Strip Vercel serverless function path prefix (/api/index.py) if attached by Vercel router
+    if "/api/index.py" in raw_path:
+        raw_path = raw_path.replace("/api/index.py", "")
+        if not raw_path:
+            raw_path = "/"
+        request.scope["path"] = raw_path
+
+    path = request.scope.get("path", "")
     if not path.startswith("/api/"):
         if path == "/login" or path == "/auth/login":
             request.scope["path"] = "/api/auth/login"
@@ -54,6 +63,7 @@ async def normalize_api_path(request: Request, call_next):
             request.scope["path"] = "/api" + path
         elif any(path.startswith(prefix) for prefix in ["/stats", "/packets", "/alerts", "/topology", "/pcap", "/capture", "/reports"]):
             request.scope["path"] = "/api" + path
+
     response = await call_next(request)
     return response
 
