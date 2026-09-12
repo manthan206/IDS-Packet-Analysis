@@ -9,3 +9,4 @@ if backend_path not in sys.path:
 from main import app
 
 handler = app
+app = app
