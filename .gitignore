@@ -29,6 +29,8 @@ venv.bak/
 
 # Project Database & Upload Cache
 backend/*.db*
+api/*.db*
+frontend/api/*.db*
 backend/uploads/*
 !backend/uploads/.gitkeep
 
