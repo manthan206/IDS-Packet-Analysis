@@ -141,6 +141,10 @@ function startStatsPolling() {
       document.getElementById('header-pps').innerText = stats.packets_per_second;
       document.getElementById('header-threats').innerText = stats.critical_alerts + stats.high_alerts;
       if (window.DashboardModule) window.DashboardModule.updateStats(stats);
+      if (currentView === 'dashboard-view' && window.DashboardModule) window.DashboardModule.refresh();
+      if (currentView === 'packets-view' && window.PacketsModule) window.PacketsModule.refresh();
+      if (currentView === 'alerts-view' && window.AlertsModule) window.AlertsModule.refresh();
+      if (currentView === 'topology-view' && window.TopologyModule) window.TopologyModule.refresh();
     } catch (e) {}
-  }, 3000);
+  }, 2500);
 }

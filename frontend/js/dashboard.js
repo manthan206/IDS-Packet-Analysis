@@ -113,6 +113,22 @@ window.DashboardModule = (() => {
       try {
         const stats = await API.getStats();
         updateStats(stats);
+
+        const recentAlerts = await API.getAlerts('ALL');
+        if (recentAlerts && recentAlerts.length > 0) {
+          const feed = document.getElementById('live-alert-feed');
+          if (feed) {
+            feed.innerHTML = recentAlerts.slice(0, 5).map(alert => `
+              <div class="glass-panel" style="padding: 0.75rem 1rem; border-left: 4px solid ${alert.severity === 'CRITICAL' ? 'var(--accent-rose)' : 'var(--accent-amber)'}; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 700; font-size: 0.9rem; color: #fff;">${alert.rule_name}</div>
+                  <div style="font-size: 0.8rem; color: var(--text-secondary);">${alert.description}</div>
+                </div>
+                <span class="badge badge-${alert.severity.toLowerCase()}">${alert.severity}</span>
+              </div>
+            `).join('');
+          }
+        }
       } catch (e) {}
     },
     updateStats,
