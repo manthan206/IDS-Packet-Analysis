@@ -28,6 +28,7 @@ env.bak/
 venv.bak/
 
 # Project Database & Upload Cache
+*.db*
 backend/*.db*
 api/*.db*
 frontend/api/*.db*
