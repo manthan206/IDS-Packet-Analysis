@@ -167,7 +167,26 @@ The container runs with `NET_ADMIN` and `NET_RAW` Linux capabilities to capture 
 
 ---
 
-## 📡 API Endpoints Reference
+## 🗄️ Dataset & Forensic PCAP Reference Data
+
+The system is tested, benchmarked, and validated against standard industry network intrusion datasets and PCAP packet traces:
+1. **Wireshark Sample Captures Dataset**: Standard PCAP forensic benchmark files ([Wireshark Sample Captures Repository](https://wiki.wireshark.org/SampleCaptures)).
+2. **CICIDS2017 Intrusion Detection Benchmark**: Canadian Institute for Cybersecurity benchmark dataset for DoS, PortScan, Brute Force, and Web attacks ([UNB CICIDS2017 Dataset](https://www.unb.ca/cic/datasets/ids-2017.html)).
+3. **Synthetic Attack Vector Stream**: Built-in dynamic packet generator simulating real-world DoS, Port Scans, SQL Injection, and Brute Force frames in real-time.
+4. **Local Sample PCAP**: A sample PCAP file (`sample_test.pcap`) generated via Scapy is included in the project directory for 1-click drag-and-drop offline analysis.
+
+---
+
+## 📋 Academic & Coursework Submission Files
+
+| Submission Requirement | Standard File Name | Formatted Submission Name | File Type |
+|------------------------|--------------------|---------------------------|-----------|
+| **Code File** | `cyber_sentinel_ids_complete.ipynb` | **`Manthan_IntrusionDetectionSystem.ipynb`** | `.ipynb` / `.py` |
+| **Requirements File** | `requirements.txt` | **`requirements.txt`** | `.txt` |
+| **Project Report** | `Manthan_ProjectReport.docx` | **`Manthan_ProjectReport.docx`** | `.docx` |
+| **README File** | `README.md` | **`README.md`** | `.md` |
+
+---
 
 ### Authentication
 - `POST /api/auth/login` — Login & receive JWT access token.
